@@ -106,6 +106,7 @@ const ClinicManagement = ({ onBreadcrumbChange }) => {
     { id: 2, name: 'Dr. Michael Chen', specialization: 'Therapist', clinicIds: [2] },
     { id: 3, name: 'Dr. Emily Rodriguez', specialization: 'Counselor', clinicIds: [] }
   ]);
+  
 
   const [allStaff] = useState([
     { id: 1, name: 'Jennifer Martinez', role: 'Intake Team', clinicIds: [1] },
@@ -122,6 +123,9 @@ const ClinicManagement = ({ onBreadcrumbChange }) => {
   const [showDomainModal, setShowDomainModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [itemToRemove, setItemToRemove] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+const [addModalType, setAddModalType] = useState(''); // 'provider' or 'staff'
+const [selectedItems, setSelectedItems] = useState([]);
 
   // Form state for editing
   const [formData, setFormData] = useState({});
@@ -206,6 +210,54 @@ const ClinicManagement = ({ onBreadcrumbChange }) => {
       setShowDomainModal(false);
     }
   };
+
+  const handleAddToClinic = (type) => {
+  setAddModalType(type);
+  setSelectedItems([]);
+  setShowAddModal(true);
+};
+
+const handleItemSelection = (itemId, checked) => {
+  if (checked) {
+    setSelectedItems(prev => [...prev, itemId]);
+  } else {
+    setSelectedItems(prev => prev.filter(id => id !== itemId));
+  }
+};
+
+const confirmAddToClinic = () => {
+  const currentData = addModalType === 'provider' ? allProviders : allStaff;
+  
+  selectedItems.forEach(itemId => {
+    const itemIndex = currentData.findIndex(item => item.id === itemId);
+    if (itemIndex !== -1) {
+      currentData[itemIndex] = {
+        ...currentData[itemIndex],
+        clinicIds: [...currentData[itemIndex].clinicIds, selectedClinic.id]
+      };
+    }
+  });
+
+  // Update clinic counts
+  const updatedClinic = {
+    ...selectedClinic,
+    [addModalType === 'provider' ? 'providerCount' : 'staffCount']: 
+      selectedClinic[addModalType === 'provider' ? 'providerCount' : 'staffCount'] + selectedItems.length
+  };
+  
+  setSelectedClinic(updatedClinic);
+  setClinics(prev => prev.map(clinic =>
+    clinic.id === selectedClinic.id ? updatedClinic : clinic
+  ));
+
+  setShowAddModal(false);
+  setSelectedItems([]);
+};
+
+const getAvailableItems = () => {
+  const currentData = addModalType === 'provider' ? allProviders : allStaff;
+  return currentData.filter(item => !item.clinicIds.includes(selectedClinic.id));
+};
 
   // Render main list view
   if (currentView === 'list') {
@@ -649,7 +701,10 @@ const ClinicManagement = ({ onBreadcrumbChange }) => {
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-medium text-white">Clinic Providers</h3>
-                <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                <button 
+  onClick={() => handleAddToClinic('provider')}
+  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+>
                   <Plus className="w-4 h-4" />
                   Add Provider
                 </button>
@@ -698,7 +753,10 @@ const ClinicManagement = ({ onBreadcrumbChange }) => {
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-medium text-white">Clinic Staff</h3>
-                <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                <button 
+  onClick={() => handleAddToClinic('staff')}
+  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+>
                   <Plus className="w-4 h-4" />
                   Add Staff
                 </button>
@@ -1028,6 +1086,78 @@ const ClinicManagement = ({ onBreadcrumbChange }) => {
             </div>
           </div>
         )}
+
+        {/* Add Provider/Staff Modal */}
+{showAddModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-medium text-white">
+          Add {addModalType === 'provider' ? 'Provider' : 'Staff'} to Clinic
+        </h3>
+        <button
+          onClick={() => setShowAddModal(false)}
+          className="text-gray-400 hover:text-white"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+      
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <p className="text-gray-300">
+            Select {addModalType === 'provider' ? 'providers' : 'staff members'} to add to this clinic:
+          </p>
+          <button className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">
+            + Create New {addModalType === 'provider' ? 'Provider' : 'Staff'}
+          </button>
+        </div>
+
+        {getAvailableItems().length === 0 ? (
+          <div className="text-center py-8 text-gray-400">
+            No available {addModalType === 'provider' ? 'providers' : 'staff members'} to add.
+            All are already assigned to this clinic.
+          </div>
+        ) : (
+          <div className="space-y-2 max-h-60 overflow-y-auto">
+            {getAvailableItems().map((item) => (
+              <label key={item.id} className="flex items-center gap-3 p-3 bg-gray-700 rounded-lg hover:bg-gray-600 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedItems.includes(item.id)}
+                  onChange={(e) => handleItemSelection(item.id, e.target.checked)}
+                  className="text-blue-600 bg-gray-600 border-gray-500 rounded focus:ring-blue-500"
+                />
+                <div className="flex-1">
+                  <p className="text-white font-medium">{item.name}</p>
+                  <p className="text-gray-400 text-sm">
+                    {addModalType === 'provider' ? item.specialization : item.role}
+                  </p>
+                </div>
+              </label>
+            ))}
+          </div>
+        )}
+
+        <div className="flex justify-end gap-3 pt-4 border-t border-gray-700">
+          <button
+            onClick={() => setShowAddModal(false)}
+            className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={confirmAddToClinic}
+            disabled={selectedItems.length === 0}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed"
+          >
+            Add Selected ({selectedItems.length})
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
       </div>
     );
   }
