@@ -25,11 +25,11 @@ const TreatmentPlans = ({ onBreadcrumbChange }) => {
   
   // Sample staff data organized by role
   const staffByRole = {
-    'Doctor': ['Dr. Smith', 'Dr. Johnson', 'Dr. Williams'],
-    'Nurse': ['Nurse Adams', 'Nurse Brown', 'Nurse Davis'],
-    'Therapist': ['Therapist Clark', 'Therapist Miller', 'Therapist Wilson'],
-    'Admin': ['Admin Taylor', 'Admin Anderson', 'Admin Thomas'],
-    'Coordinator': ['Coord. Martin', 'Coord. Garcia', 'Coord. Rodriguez']
+    'Intake Team': ['Smith', 'Johnson', 'Williams'],
+    'Provider POC': ['Nurse Adams', 'Nurse Brown', 'Nurse Davis'],
+    'Provider': ['Therapist Clark', 'Therapist Miller', 'Therapist Wilson'],
+    'Scheduling Team': ['Taylor', 'Anderson', 'Thomas'],
+    'RCM': ['Coord. Martin', 'Coord. Garcia', 'Coord. Rodriguez']
   };
 
   const allStaff = Object.values(staffByRole).flat();
@@ -48,7 +48,7 @@ const TreatmentPlans = ({ onBreadcrumbChange }) => {
         {
           id: 1,
           stageName: 'Initial Assessment',
-          assignedRole: 'Doctor',
+          assignedRole: 'Provider',
           assignedAgents: ['Dr. Smith'],
           escalationTime: '24 hours',
           escalationTarget: 'Dr. Johnson'
@@ -56,7 +56,7 @@ const TreatmentPlans = ({ onBreadcrumbChange }) => {
         {
           id: 2,
           stageName: 'Medication Review',
-          assignedRole: 'Nurse',
+          assignedRole: 'Provider POC',
           assignedAgents: ['Nurse Adams'],
           escalationTime: '+2 days from previous step',
           escalationTarget: 'Nurse Brown'
