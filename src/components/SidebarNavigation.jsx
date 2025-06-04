@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import FormBuilder from './FormBuilder';
 import TreatmentPlans from './TreatmentPlans';
+import ProviderStaff from './ProviderStaff';
 
 import { 
   Home, 
@@ -96,12 +97,7 @@ const SidebarNavigation = () => {
           </div>
         );
       case 'Provider & Staff':
-        return (
-          <div className="bg-slate-800 rounded-lg border border-slate-700 p-8 text-center">
-            <h2 className="text-2xl font-semibold text-white mb-4">Provider & Staff</h2>
-            <p className="text-slate-300">Provider & staff module coming soon...</p>
-          </div>
-        );
+        return <ProviderStaff onBreadcrumbChange={handleBreadcrumbChange} />;
       case 'Message':
         return (
           <div className="bg-slate-800 rounded-lg border border-slate-700 p-8 text-center">

@@ -1,6 +1,7 @@
 import { SidebarIcon } from 'lucide-react'
 import TestComponent from './components/TestComponent'
 import SidebarNavigation from './components/SidebarNavigation'
+import ProviderStaff from './components/ProviderStaff';
 
 function App() {
   return <SidebarNavigation />
