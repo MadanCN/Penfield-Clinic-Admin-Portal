@@ -226,25 +226,23 @@ const ProviderStaff = ({ onBreadcrumbChange }) => {
   };
 
   const handleDelete = (item) => {
-    const hasActiveWork = activeTab === 'Providers' ? item.hasActiveAppointments : item.hasActiveTasks;
-    if (hasActiveWork) {
-      const message = activeTab === 'Providers' 
-        ? 'This Provider is a part of the Ongoing Treatment plan/appointment – please make sure the provider is replaced before deleting'
-        : 'This Staff member is currently assigned to one or more ongoing appointments or workflows. Please ensure they are reassigned before deletion.';
-      alert(message);
-      return;
-    }
+  const hasActiveWork = activeTab === 'Providers' ? item.hasActiveAppointments : item.hasActiveTasks;
+  if (hasActiveWork) {
     setItemToDelete(item);
     setShowDeleteModal(true);
-  };
+    return;
+  }
+  setItemToDelete(item);
+  setShowDeleteModal(true);
+};
 
   const confirmDelete = () => {
-    const data = getCurrentData();
-    const updatedData = data.filter(item => item.id !== itemToDelete.id);
-    setCurrentData(updatedData);
-    setShowDeleteModal(false);
-    setItemToDelete(null);
-  };
+  const data = getCurrentData();
+  const updatedData = data.filter(item => item.id !== itemToDelete.id);
+  setCurrentData(updatedData);
+  setShowDeleteModal(false);
+  setItemToDelete(null);
+};
 
   const handleCreateNew = () => {
     const initialData = {

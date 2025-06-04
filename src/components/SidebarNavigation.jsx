@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import FormBuilder from './FormBuilder';
 import TreatmentPlans from './TreatmentPlans';
 import ProviderStaff from './ProviderStaff';
-
+import ClinicManagement from './ClinicManagement';
 import { 
   Home, 
   FileText, 
@@ -90,12 +90,7 @@ const SidebarNavigation = () => {
         return <FormBuilder onBreadcrumbChange={handleBreadcrumbChange} />;
         
       case 'Clinic Management':
-        return (
-          <div className="bg-slate-800 rounded-lg border border-slate-700 p-8 text-center">
-            <h2 className="text-2xl font-semibold text-white mb-4">Clinic Management</h2>
-            <p className="text-slate-300">Clinic management module coming soon...</p>
-          </div>
-        );
+  return <ClinicManagement onBreadcrumbChange={handleBreadcrumbChange} />;
       case 'Provider & Staff':
         return <ProviderStaff onBreadcrumbChange={handleBreadcrumbChange} />;
       case 'Message':

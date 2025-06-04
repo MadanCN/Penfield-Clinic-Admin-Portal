@@ -92,7 +92,7 @@ const FormBuilder = ({ onBreadcrumbChange }) => {
   const [showPreview, setShowPreview] = useState(false);
   const [previewTarget, setPreviewTarget] = useState(null);
   const [confirmText, setConfirmText] = useState('');
-  const [showActiveWarningModal, setShowActiveWarningModal] = useState(false);
+  
   
   // Form creation states
   const [formData, setFormData] = useState({
@@ -876,71 +876,72 @@ const FormBuilder = ({ onBreadcrumbChange }) => {
         </div>
       )}
 
-      {/* Delete Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center mb-4">
-              <AlertTriangle className="w-6 h-6 text-red-400 mr-3" />
-              <h3 className="text-lg font-medium text-white">
-                {deleteTarget?.type === 'form' && deleteTarget?.item.status === 'Active' 
-                  ? "Cannot Delete Active Form"
-                  : "Confirm Deletion"
-                }
-              </h3>
-            </div>
-            
-            <div className="mb-4">
-              {deleteTarget?.type === 'form' && deleteTarget?.item.status === 'Active' ? (
-                <p className="text-sm text-gray-300">
-                  Active Forms can't be deleted - Make the form inactive before deleting
-                </p>
-              ) : deleteTarget?.type === 'formset' && deleteTarget?.item.type === 'Standard' ? (
-                <div>
-                  <p className="text-sm text-gray-300 mb-3">
-                    Are you sure you want to delete this form set? Doing so will remove the form set from the available list for all patients.
-                  </p>
-                  <p className="text-sm font-medium text-white mb-2">
-                    Please enter the form name exactly as it appears to confirm deletion:
-                  </p>
-                  <input
-                    type="text"
-                    value={confirmText}
-                    onChange={(e) => setConfirmText(e.target.value)}
-                    className="w-full border border-gray-600 rounded-lg px-3 py-2 text-sm bg-gray-700 text-white placeholder-gray-400"
-                    placeholder={deleteTarget?.item.name}
-                  />
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 max-w-md w-full mx-4">
+      {/* Check if item has active work */}
+      {(() => {
+        const hasActiveWork = activeTab === 'Providers' ? itemToDelete?.hasActiveAppointments : itemToDelete?.hasActiveTasks;
+        
+        if (hasActiveWork) {
+          return (
+            <>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-yellow-900 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-yellow-400" />
                 </div>
-              ) : (
-                <p className="text-sm text-gray-300">
-                  Are you sure you want to delete this {deleteTarget?.type === 'form' ? 'form' : 'form set'}? 
-                  THIS ACTION CANNOT BE UNDONE.
-                </p>
-              )}
-            </div>
-            
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setConfirmText('');
-                }}
-                className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600 border border-gray-600"
-              >
-                Cancel
-              </button>
-              {!(deleteTarget?.type === 'form' && deleteTarget?.item.status === 'Active') && (
+                <h3 className="text-lg font-medium text-white">Cannot Delete {activeTab.slice(0, -1)}</h3>
+              </div>
+              <p className="text-gray-300 mb-6">
+                {activeTab === 'Providers' 
+                  ? 'This Provider is part of an ongoing treatment plan/appointment. Please ensure the provider is replaced before deleting.'
+                  : 'This Staff member is currently assigned to one or more ongoing appointments or workflows. Please ensure they are reassigned before deletion.'
+                }
+              </p>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Understood
+                </button>
+              </div>
+            </>
+          );
+        } else {
+          return (
+            <>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-red-900 rounded-full flex items-center justify-center">
+                  <Trash2 className="w-5 h-5 text-red-400" />
+                </div>
+                <h3 className="text-lg font-medium text-white">Confirm Delete</h3>
+              </div>
+              <p className="text-gray-300 mb-6">
+                Are you sure you want to delete <strong className="text-white">{itemToDelete?.fullName}</strong>? 
+                <span className="block mt-2 text-red-300 font-medium">THIS ACTION CANNOT BE UNDONE.</span>
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
+                >
+                  Cancel
+                </button>
                 <button
                   onClick={confirmDelete}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
                 >
-                  {deleteTarget?.type === 'formset' && deleteTarget?.item.type === 'Standard' ? 'Confirm' : 'Delete'}
+                  Delete {activeTab.slice(0, -1)}
                 </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+              </div>
+            </>
+          );
+        }
+      })()}
+    </div>
+  </div>
+)}
     </div>
   );
 };
