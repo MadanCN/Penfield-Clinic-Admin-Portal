@@ -27,6 +27,9 @@ import {
 } from 'lucide-react';
 
 const ClinicManagement = ({ onBreadcrumbChange }) => {
+  // Staff roles
+  const staffRoles = ['Intake Team', 'Scheduling Team', 'Supervisor', 'Provider POC', 'RCM'];
+
   // Sample clinics data
   const [clinics, setClinics] = useState([
     {
@@ -62,7 +65,34 @@ const ClinicManagement = ({ onBreadcrumbChange }) => {
       taskSettings: {
         defaultEscalationTime: '24 hours',
         defaultEscalationTarget: 'Dr. Sarah Johnson',
-        standardTaskReviewer: 'Jennifer Martinez'
+        standardTaskReviewer: 'Jennifer Martinez',
+        roleSpecific: {
+          'Intake Team': {
+            escalationTime: '4 hours',
+            escalationTarget: 'Dr. Sarah Johnson',
+            reviewer: 'Jennifer Martinez'
+          },
+          'Scheduling Team': {
+            escalationTime: '8 hours',
+            escalationTarget: 'Robert Thompson',
+            reviewer: 'Lisa Anderson'
+          },
+          'Supervisor': {
+            escalationTime: '24 hours',
+            escalationTarget: 'Dr. Sarah Johnson',
+            reviewer: 'Jennifer Martinez'
+          },
+          'Provider POC': {
+            escalationTime: '2 hours',
+            escalationTarget: 'Dr. Michael Chen',
+            reviewer: 'Robert Thompson'
+          },
+          'RCM': {
+            escalationTime: '48 hours',
+            escalationTarget: 'Lisa Anderson',
+            reviewer: 'Jennifer Martinez'
+          }
+        }
       }
     },
     {
@@ -95,18 +125,44 @@ const ClinicManagement = ({ onBreadcrumbChange }) => {
       taskSettings: {
         defaultEscalationTime: '12 hours',
         defaultEscalationTarget: 'Dr. Michael Chen',
-        standardTaskReviewer: 'Robert Thompson'
+        standardTaskReviewer: 'Robert Thompson',
+        roleSpecific: {
+          'Intake Team': {
+            escalationTime: '2 hours',
+            escalationTarget: 'Dr. Michael Chen',
+            reviewer: 'Robert Thompson'
+          },
+          'Scheduling Team': {
+            escalationTime: '4 hours',
+            escalationTarget: 'Lisa Anderson',
+            reviewer: 'Dr. Michael Chen'
+          },
+          'Supervisor': {
+            escalationTime: '12 hours',
+            escalationTarget: 'Dr. Michael Chen',
+            reviewer: 'Robert Thompson'
+          },
+          'Provider POC': {
+            escalationTime: '1 hour',
+            escalationTarget: 'Dr. Michael Chen',
+            reviewer: 'Lisa Anderson'
+          },
+          'RCM': {
+            escalationTime: '24 hours',
+            escalationTarget: 'Robert Thompson',
+            reviewer: 'Dr. Michael Chen'
+          }
+        }
       }
     }
   ]);
 
-  // Sample providers and staff data (would come from ProviderStaff module)
+  // Sample providers and staff data
   const [allProviders] = useState([
     { id: 1, name: 'Dr. Sarah Johnson', specialization: 'Psychiatrist', clinicIds: [1] },
     { id: 2, name: 'Dr. Michael Chen', specialization: 'Therapist', clinicIds: [2] },
     { id: 3, name: 'Dr. Emily Rodriguez', specialization: 'Counselor', clinicIds: [] }
   ]);
-  
 
   const [allStaff] = useState([
     { id: 1, name: 'Jennifer Martinez', role: 'Intake Team', clinicIds: [1] },
@@ -114,6 +170,7 @@ const ClinicManagement = ({ onBreadcrumbChange }) => {
     { id: 3, name: 'Lisa Anderson', role: 'Supervisor', clinicIds: [] }
   ]);
 
+  // State variables
   const [currentView, setCurrentView] = useState('list'); // 'list', 'view', 'edit'
   const [selectedClinic, setSelectedClinic] = useState(null);
   const [activeTab, setActiveTab] = useState('Details'); // 'Details', 'Providers', 'Staff', 'Branding', 'Domain', 'Task Settings'
@@ -121,11 +178,11 @@ const ClinicManagement = ({ onBreadcrumbChange }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [showDomainModal, setShowDomainModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addModalType, setAddModalType] = useState(''); // 'provider' or 'staff'
+  const [selectedItems, setSelectedItems] = useState([]);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [itemToRemove, setItemToRemove] = useState(null);
-  const [showAddModal, setShowAddModal] = useState(false);
-const [addModalType, setAddModalType] = useState(''); // 'provider' or 'staff'
-const [selectedItems, setSelectedItems] = useState([]);
 
   // Form state for editing
   const [formData, setFormData] = useState({});
@@ -154,7 +211,15 @@ const [selectedItems, setSelectedItems] = useState([]);
 
   const handleEdit = (clinic) => {
     setSelectedClinic(clinic);
-    setFormData({ ...clinic });
+    // Ensure taskSettings has proper structure
+    const formDataWithDefaults = {
+      ...clinic,
+      taskSettings: {
+        ...clinic.taskSettings,
+        roleSpecific: clinic.taskSettings?.roleSpecific || {}
+      }
+    };
+    setFormData(formDataWithDefaults);
     setCurrentView('edit');
     setActiveTab('Details');
   };
@@ -174,6 +239,8 @@ const [selectedItems, setSelectedItems] = useState([]);
     setClinics(prev => prev.map(clinic =>
       clinic.id === selectedClinic.id ? { ...clinic, ...formData } : clinic
     ));
+    // Update selectedClinic to reflect changes
+    setSelectedClinic({ ...selectedClinic, ...formData });
     setCurrentView('view');
   };
 
@@ -212,52 +279,52 @@ const [selectedItems, setSelectedItems] = useState([]);
   };
 
   const handleAddToClinic = (type) => {
-  setAddModalType(type);
-  setSelectedItems([]);
-  setShowAddModal(true);
-};
-
-const handleItemSelection = (itemId, checked) => {
-  if (checked) {
-    setSelectedItems(prev => [...prev, itemId]);
-  } else {
-    setSelectedItems(prev => prev.filter(id => id !== itemId));
-  }
-};
-
-const confirmAddToClinic = () => {
-  const currentData = addModalType === 'provider' ? allProviders : allStaff;
-  
-  selectedItems.forEach(itemId => {
-    const itemIndex = currentData.findIndex(item => item.id === itemId);
-    if (itemIndex !== -1) {
-      currentData[itemIndex] = {
-        ...currentData[itemIndex],
-        clinicIds: [...currentData[itemIndex].clinicIds, selectedClinic.id]
-      };
-    }
-  });
-
-  // Update clinic counts
-  const updatedClinic = {
-    ...selectedClinic,
-    [addModalType === 'provider' ? 'providerCount' : 'staffCount']: 
-      selectedClinic[addModalType === 'provider' ? 'providerCount' : 'staffCount'] + selectedItems.length
+    setAddModalType(type);
+    setSelectedItems([]);
+    setShowAddModal(true);
   };
-  
-  setSelectedClinic(updatedClinic);
-  setClinics(prev => prev.map(clinic =>
-    clinic.id === selectedClinic.id ? updatedClinic : clinic
-  ));
 
-  setShowAddModal(false);
-  setSelectedItems([]);
-};
+  const handleItemSelection = (itemId, checked) => {
+    if (checked) {
+      setSelectedItems(prev => [...prev, itemId]);
+    } else {
+      setSelectedItems(prev => prev.filter(id => id !== itemId));
+    }
+  };
 
-const getAvailableItems = () => {
-  const currentData = addModalType === 'provider' ? allProviders : allStaff;
-  return currentData.filter(item => !item.clinicIds.includes(selectedClinic.id));
-};
+  const confirmAddToClinic = () => {
+    const currentData = addModalType === 'provider' ? allProviders : allStaff;
+    
+    selectedItems.forEach(itemId => {
+      const itemIndex = currentData.findIndex(item => item.id === itemId);
+      if (itemIndex !== -1) {
+        currentData[itemIndex] = {
+          ...currentData[itemIndex],
+          clinicIds: [...currentData[itemIndex].clinicIds, selectedClinic.id]
+        };
+      }
+    });
+
+    // Update clinic counts
+    const updatedClinic = {
+      ...selectedClinic,
+      [addModalType === 'provider' ? 'providerCount' : 'staffCount']: 
+        selectedClinic[addModalType === 'provider' ? 'providerCount' : 'staffCount'] + selectedItems.length
+    };
+    
+    setSelectedClinic(updatedClinic);
+    setClinics(prev => prev.map(clinic =>
+      clinic.id === selectedClinic.id ? updatedClinic : clinic
+    ));
+
+    setShowAddModal(false);
+    setSelectedItems([]);
+  };
+
+  const getAvailableItems = () => {
+    const currentData = addModalType === 'provider' ? allProviders : allStaff;
+    return currentData.filter(item => !item.clinicIds.includes(selectedClinic.id));
+  };
 
   // Render main list view
   if (currentView === 'list') {
@@ -309,10 +376,10 @@ const getAvailableItems = () => {
                   Ops Portal
                 </button>
                 <button
-  onClick={() => window.open(clinic.patientPortalUrl, '_blank')}
-  className="flex items-center gap-1 text-blue-400 hover:text-blue-300 text-sm"
-  title="Patient Portal"
->
+                  onClick={() => window.open(clinic.patientPortalUrl, '_blank')}
+                  className="flex items-center gap-1 text-blue-400 hover:text-blue-300 text-sm"
+                  title="Patient Portal"
+                >
                   <ExternalLink className="w-4 h-4" />
                   Patient Portal
                 </button>
@@ -477,9 +544,9 @@ const getAvailableItems = () => {
               Patient Portal
             </button>
             <button
-  onClick={() => window.open(clinic.patientPortalUrl, '_blank')}
-  className="flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm"
->
+              onClick={() => window.open(clinic.opsPortalUrl, '_blank')}
+              className="flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm"
+            >
               <Monitor className="w-4 h-4" />
               Operations Portal
             </button>
@@ -642,6 +709,8 @@ const getAvailableItems = () => {
                         onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
                         className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
+                      // Continuation of Complete Clinic Management Module
+
                     ) : (
                       <p className="text-white">{clinic.website}</p>
                     )}
@@ -702,9 +771,9 @@ const getAvailableItems = () => {
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-medium text-white">Clinic Providers</h3>
                 <button 
-  onClick={() => handleAddToClinic('provider')}
-  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
->
+                  onClick={() => handleAddToClinic('provider')}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                >
                   <Plus className="w-4 h-4" />
                   Add Provider
                 </button>
@@ -754,9 +823,9 @@ const getAvailableItems = () => {
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-medium text-white">Clinic Staff</h3>
                 <button 
-  onClick={() => handleAddToClinic('staff')}
-  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
->
+                  onClick={() => handleAddToClinic('staff')}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                >
                   <Plus className="w-4 h-4" />
                   Add Staff
                 </button>
@@ -920,81 +989,132 @@ const getAvailableItems = () => {
           {activeTab === 'Task Settings' && (
             <div className="space-y-6">
               <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-                <h3 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
+                <h3 className="text-lg font-medium text-white mb-6 flex items-center gap-2">
                   <Settings className="w-5 h-5" />
-                  Task Configuration
+                  Role-Based Task Configuration
                 </h3>
+                
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Default Task Escalation Time
-                    </label>
-                    {isEditing ? (
-                      <select
-                        value={clinic.taskSettings.defaultEscalationTime}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          taskSettings: { ...prev.taskSettings, defaultEscalationTime: e.target.value }
-                        }))}
-                        className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="2 hours">2 hours</option>
-                        <option value="4 hours">4 hours</option>
-                        <option value="8 hours">8 hours</option>
-                        <option value="24 hours">24 hours</option>
-                        <option value="48 hours">48 hours</option>
-                      </select>
-                    ) : (
-                      <p className="text-white">{clinic.taskSettings.defaultEscalationTime}</p>
-                    )}
-                  </div>
+                  {staffRoles.map((role) => {
+                    const roleSettings = clinic.taskSettings?.roleSpecific?.[role] || {
+                      escalationTime: '24 hours',
+                      escalationTarget: '',
+                      reviewer: ''
+                    };
+                    
+                    return (
+                      <div key={role} className="bg-gray-700 border border-gray-600 rounded-lg p-4">
+                        <h4 className="text-white font-medium mb-4 flex items-center gap-2">
+                          <UserCheck className="w-4 h-4" />
+                          {role}
+                        </h4>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                              Escalation Time
+                            </label>
+                            {isEditing ? (
+                              <select
+                                value={roleSettings.escalationTime}
+                                onChange={(e) => setFormData(prev => ({
+                                  ...prev,
+                                  taskSettings: {
+                                    ...prev.taskSettings,
+                                    roleSpecific: {
+                                      ...prev.taskSettings?.roleSpecific,
+                                      [role]: {
+                                        ...roleSettings,
+                                        escalationTime: e.target.value
+                                      }
+                                    }
+                                  }
+                                }))}
+                                className="w-full bg-gray-600 border border-gray-500 text-white px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              >
+                                <option value="2 hours">2 hours</option>
+                                <option value="4 hours">4 hours</option>
+                                <option value="8 hours">8 hours</option>
+                                <option value="24 hours">24 hours</option>
+                                <option value="48 hours">48 hours</option>
+                                <option value="+1 day from previous step">+1 day from previous step</option>
+                                <option value="+2 days from previous step">+2 days from previous step</option>
+                              </select>
+                            ) : (
+                              <p className="text-white">{roleSettings.escalationTime}</p>
+                            )}
+                          </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Default Task Escalation Target
-                    </label>
-                    {isEditing ? (
-                      <select
-                        value={clinic.taskSettings.defaultEscalationTarget}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          taskSettings: { ...prev.taskSettings, defaultEscalationTarget: e.target.value }
-                        }))}
-                        className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        {allProviders.concat(allStaff).map(person => (
-                          <option key={person.id} value={person.name}>{person.name}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <p className="text-white">{clinic.taskSettings.defaultEscalationTarget}</p>
-                    )}
-                  </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                              Escalation Target
+                            </label>
+                            {isEditing ? (
+                              <select
+                                value={roleSettings.escalationTarget}
+                                onChange={(e) => setFormData(prev => ({
+                                  ...prev,
+                                  taskSettings: {
+                                    ...prev.taskSettings,
+                                    roleSpecific: {
+                                      ...prev.taskSettings?.roleSpecific,
+                                      [role]: {
+                                        ...roleSettings,
+                                        escalationTarget: e.target.value
+                                      }
+                                    }
+                                  }
+                                }))}
+                                className="w-full bg-gray-600 border border-gray-500 text-white px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              >
+                                <option value="">Select escalation target</option>
+                                {allProviders.concat(allStaff).map(person => (
+                                  <option key={person.id} value={person.name}>{person.name}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <p className="text-white">{roleSettings.escalationTarget || 'Not set'}</p>
+                            )}
+                          </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Standard Task Reviewer
-                      <span className="block text-xs text-gray-400 mt-1">
-                        Reviewer is the person who is notified when a task is rejected
-                      </span>
-                    </label>
-                    {isEditing ? (
-                      <select
-                        value={clinic.taskSettings.standardTaskReviewer}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          taskSettings: { ...prev.taskSettings, standardTaskReviewer: e.target.value }
-                        }))}
-                        className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        {allStaff.map(staff => (
-                          <option key={staff.id} value={staff.name}>{staff.name}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <p className="text-white">{clinic.taskSettings.standardTaskReviewer}</p>
-                    )}
-                  </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                              Reviewer
+                              <span className="block text-xs text-gray-400 mt-1">
+                                Notified when task is rejected
+                              </span>
+                            </label>
+                            {isEditing ? (
+                              <select
+                                value={roleSettings.reviewer}
+                                onChange={(e) => setFormData(prev => ({
+                                  ...prev,
+                                  taskSettings: {
+                                    ...prev.taskSettings,
+                                    roleSpecific: {
+                                      ...prev.taskSettings?.roleSpecific,
+                                      [role]: {
+                                        ...roleSettings,
+                                        reviewer: e.target.value
+                                      }
+                                    }
+                                  }
+                                }))}
+                                className="w-full bg-gray-600 border border-gray-500 text-white px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              >
+                                <option value="">Select reviewer</option>
+                                {allStaff.concat(allProviders).map(person => (
+                                  <option key={person.id} value={person.name}>{person.name}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <p className="text-white">{roleSettings.reviewer || 'Not set'}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -1088,76 +1208,76 @@ const getAvailableItems = () => {
         )}
 
         {/* Add Provider/Staff Modal */}
-{showAddModal && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium text-white">
-          Add {addModalType === 'provider' ? 'Provider' : 'Staff'} to Clinic
-        </h3>
-        <button
-          onClick={() => setShowAddModal(false)}
-          className="text-gray-400 hover:text-white"
-        >
-          <X className="w-5 h-5" />
-        </button>
-      </div>
-      
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <p className="text-gray-300">
-            Select {addModalType === 'provider' ? 'providers' : 'staff members'} to add to this clinic:
-          </p>
-          <button className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">
-            + Create New {addModalType === 'provider' ? 'Provider' : 'Staff'}
-          </button>
-        </div>
-
-        {getAvailableItems().length === 0 ? (
-          <div className="text-center py-8 text-gray-400">
-            No available {addModalType === 'provider' ? 'providers' : 'staff members'} to add.
-            All are already assigned to this clinic.
-          </div>
-        ) : (
-          <div className="space-y-2 max-h-60 overflow-y-auto">
-            {getAvailableItems().map((item) => (
-              <label key={item.id} className="flex items-center gap-3 p-3 bg-gray-700 rounded-lg hover:bg-gray-600 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={selectedItems.includes(item.id)}
-                  onChange={(e) => handleItemSelection(item.id, e.target.checked)}
-                  className="text-blue-600 bg-gray-600 border-gray-500 rounded focus:ring-blue-500"
-                />
-                <div className="flex-1">
-                  <p className="text-white font-medium">{item.name}</p>
-                  <p className="text-gray-400 text-sm">
-                    {addModalType === 'provider' ? item.specialization : item.role}
+        {showAddModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-white">
+                  Add {addModalType === 'provider' ? 'Provider' : 'Staff'} to Clinic
+                </h3>
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <p className="text-gray-300">
+                    Select {addModalType === 'provider' ? 'providers' : 'staff members'} to add to this clinic:
                   </p>
+                  <button className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">
+                    + Create New {addModalType === 'provider' ? 'Provider' : 'Staff'}
+                  </button>
                 </div>
-              </label>
-            ))}
+
+                {getAvailableItems().length === 0 ? (
+                  <div className="text-center py-8 text-gray-400">
+                    No available {addModalType === 'provider' ? 'providers' : 'staff members'} to add.
+                    All are already assigned to this clinic.
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {getAvailableItems().map((item) => (
+                      <label key={item.id} className="flex items-center gap-3 p-3 bg-gray-700 rounded-lg hover:bg-gray-600 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedItems.includes(item.id)}
+                          onChange={(e) => handleItemSelection(item.id, e.target.checked)}
+                          className="text-blue-600 bg-gray-600 border-gray-500 rounded focus:ring-blue-500"
+                        />
+                        <div className="flex-1">
+                          <p className="text-white font-medium">{item.name}</p>
+                          <p className="text-gray-400 text-sm">
+                            {addModalType === 'provider' ? item.specialization : item.role}
+                          </p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-700">
+                  <button
+                    onClick={() => setShowAddModal(false)}
+                    className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmAddToClinic}
+                    disabled={selectedItems.length === 0}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed"
+                  >
+                    Add Selected ({selectedItems.length})
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
-
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-700">
-          <button
-            onClick={() => setShowAddModal(false)}
-            className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={confirmAddToClinic}
-            disabled={selectedItems.length === 0}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed"
-          >
-            Add Selected ({selectedItems.length})
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
       </div>
     );
   }
